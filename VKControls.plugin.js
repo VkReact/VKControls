@@ -93,8 +93,10 @@ class PanelController {
         this.node.remove()
     }
     urlSwitch() {
-        this.node.remove()
-        this.createPanel()
+        let nextChild = this.node.parentElement.children[Array.from(this.node.parentElement.children).indexOf(this.node)+1]
+        if (nextChild && nextChild.tagName == "NAV") {
+            nextChild.after(this.node)
+        } 
     }
 }
 
@@ -177,6 +179,7 @@ module.exports = class VKControls {
                             this.controller.node.querySelector(".vkc_im_img.btn.pause").src = stateButtons[parsed.status]
                             this.controller.node.querySelector(".progress").style.width = `${parsed.progress}%`
                             this.max_time = parsed.duration
+                            this.controller.node.style.height = '53px'
                         }
                         break
                     }
@@ -191,6 +194,10 @@ module.exports = class VKControls {
         BdApi.injectCSS("vkc_css", `
             .vkc_button {
                 align-self: center;
+            }
+            #vkc_panel {
+                transition: height 1s;
+                height: 1px;
             }
              #vkc_grid {
                  display:grid;
