@@ -93,10 +93,10 @@ class PanelController {
         this.node.remove()
     }
     urlSwitch() {
-        let nextChild = this.node.parentElement.children[Array.from(this.node.parentElement.children).indexOf(this.node)+1]
+        let nextChild = this.node.parentElement.children[Array.from(this.node.parentElement.children).indexOf(this.node) + 1]
         if (nextChild && nextChild.tagName == "NAV") {
             nextChild.after(this.node)
-        } 
+        }
     }
 }
 
@@ -109,23 +109,23 @@ let mapRange = function (from, to, value) {
     else return parseFloat(to[0]) + (parseFloat(value) - parseFloat(from[0])) * (parseFloat(to[1]) - parseFloat(to[0])) / (parseFloat(from[1]) - parseFloat(from[0]));
 };
 
-let stateButtons = {"PLAY": "https://img.icons8.com/material-outlined/32/ffffff/pause--v1.png", "PAUSE": "https://img.icons8.com/ios-glyphs/30/ffffff/play--v1.png"}
+let stateButtons = { "PLAY": "https://img.icons8.com/material-outlined/32/ffffff/pause--v1.png", "PAUSE": "https://img.icons8.com/ios-glyphs/30/ffffff/play--v1.png" }
 
 module.exports = class VKControls {
     prev() {
-        this.wss.broadcast(jsonify({"command": "playPrev"}))
+        this.wss.send_latest(jsonify({ "command": "playPrev" }))
     }
     next() {
-        this.wss.broadcast(jsonify({"command": "playNext"}))
+        this.wss.send_latest(jsonify({ "command": "playNext" }))
     }
     playpause() {
-        this.wss.broadcast(jsonify({"command": "play_pause"}))
+        this.wss.send_latest(jsonify({ "command": "play_pause" }))
     }
     pg(e, element) {
         let rects = element.getClientRects()[0]
         if (!this.max_time) return
         let pos = Math.round(mapRange([rects.left, rects.left + rects.width], [0, this.max_time], e.clientX))
-        this.wss.broadcast(jsonify({"command": "seek_time", "time": pos}))
+        this.wss.send_latest(jsonify({ "command": "seek_time", "time": pos }))
     }
     async load() {
         window.vkc = this
@@ -167,12 +167,13 @@ module.exports = class VKControls {
     start() {
         this.wss = new this.ws.Server({ "port": 6374 })
         this.wss.on("connection", wsClient => {
-            wsClient.send(jsonify({"command":"request_data"}))
+            wsClient.send(jsonify({ "command": "request_data" }))
             wsClient.on("message", message => {
                 let parsed = JSON.parse(message)
                 switch (parsed.command) {
                     case "update_info": {
                         if (parsed.status != "NO_PLAYER") {
+                            this.last_sender = wsClient
                             this.controller.node.querySelector(".size14-3fJ-ot.title-338goq.vkc > span").textContent = parsed.name
                             this.controller.node.querySelector(".size14-3fJ-ot.title-338goq.vkc.artist").innerText = parsed.artist
                             this.controller.node.querySelector(".vkc_im_img").src = parsed.cover
@@ -186,10 +187,8 @@ module.exports = class VKControls {
                 }
             })
         })
-        this.wss.broadcast = function(message) {
-            this.clients.forEach(it => {
-                it.send(message)
-            })
+        this.wss.send_latest = (message) => {
+            if (this.last_sender) this.last_sender.send(message)
         }
         BdApi.injectCSS("vkc_css", `
             .vkc_button {
